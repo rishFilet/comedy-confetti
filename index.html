@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comedy Confetti</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎉</text></svg>">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0f0f1a;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      margin-bottom: 2.5rem;
+      letter-spacing: -0.5px;
+      text-align: center;
+    }
+
+    #spray-btn {
+      font-size: clamp(1.1rem, 3vw, 1.4rem);
+      padding: 1rem 2.8rem;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: transform 0.1s ease, box-shadow 0.1s ease;
+      box-shadow: 0 4px 24px rgba(245, 87, 108, 0.45);
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    #spray-btn:hover  { transform: scale(1.06); box-shadow: 0 6px 34px rgba(245, 87, 108, 0.6); }
+    #spray-btn:active { transform: scale(0.96); }
+
+    #uses-left {
+      margin-top: 1.2rem;
+      font-size: 0.85rem;
+      opacity: 0.45;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Paywall overlay ── */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .overlay.active { display: flex; }
+
+    .modal {
+      background: #16213e;
+      border: 1px solid rgba(229, 57, 97, 0.45);
+      border-radius: 24px;
+      padding: 2.5rem 2rem;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+    .modal-emoji { font-size: 3rem; margin-bottom: 0.6rem; }
+    .modal h2 { font-size: 1.6rem; margin-bottom: 0.6rem; }
+    .modal p  { opacity: 0.72; line-height: 1.6; margin-bottom: 2rem; font-size: 0.95rem; }
+
+    .btn-group { display: flex; flex-direction: column; gap: 0.8rem; }
+
+    .btn-pay {
+      padding: 0.9rem;
+      font-size: 1rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #43e97b, #38f9d7);
+      color: #0f0f1a;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .btn-pay:hover  { transform: scale(1.03); }
+    .btn-pay:active { transform: scale(0.97); }
+
+    .btn-ad {
+      padding: 0.9rem;
+      font-size: 1rem;
+      font-weight: 600;
+      background: transparent;
+      color: #fff;
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+    }
+    .btn-ad:hover  { border-color: rgba(255,255,255,0.55); transform: scale(1.02); }
+    .btn-ad:active { transform: scale(0.97); }
+
+    /* ── Ad overlay ── */
+    #ad-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #d94f00;
+      z-index: 200;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+    #ad-overlay.active { display: flex; }
+
+    #ad-overlay .ad-eyebrow {
+      font-size: 0.85rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      opacity: 0.7;
+      margin-bottom: 1.2rem;
+    }
+    #ad-overlay .ad-logo {
+      font-size: clamp(3rem, 10vw, 5.5rem);
+      margin-bottom: 0.2rem;
+    }
+    #ad-overlay .ad-brand {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.8rem;
+    }
+    #ad-overlay .ad-tagline {
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      opacity: 0.88;
+      max-width: 380px;
+      line-height: 1.5;
+    }
+    #ad-timer {
+      margin-top: 2.5rem;
+      font-size: 0.8rem;
+      opacity: 0.55;
+      letter-spacing: 1px;
+    }
+    #ad-bar-wrap {
+      margin-top: 0.7rem;
+      width: min(220px, 60vw);
+      height: 3px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    @keyframes ad-shrink {
+      from { transform: scaleX(1); }
+      to   { transform: scaleX(0); }
+    }
+    #ad-bar {
+      height: 100%;
+      background: rgba(255,255,255,0.8);
+      width: 100%;
+      transform-origin: left;
+      transform: scaleX(0);
+    }
+    #ad-bar.running {
+      animation: ad-shrink 5s linear forwards;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎉 Comedy Confetti</h1>
+  <button id="spray-btn">Spray Confetti</button>
+  <div id="uses-left"></div>
+
+  <!-- Paywall modal -->
+  <div class="overlay" id="paywall">
+    <div class="modal">
+      <div class="modal-emoji">🌍</div>
+      <h2>Think of the planet.</h2>
+      <p>You've used your 3 free confetti sprays.<br>Climate change is real, and so is this paywall.</p>
+      <div class="btn-group">
+        <button class="btn-pay" id="pay-btn">Pay $100 to spray again</button>
+        <button class="btn-ad"  id="ad-btn">Watch a 5-second ad instead</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ad overlay -->
+  <div id="ad-overlay">
+    <div class="ad-eyebrow">Advertisement</div>
+    <div class="ad-logo">🍗</div>
+    <div class="ad-brand">Tiger Den</div>
+    <div class="ad-tagline">Buy Tiger Den fried chicken — the only other reason to stick around.</div>
+    <div id="ad-timer">Ad ends in <span id="countdown">5</span>s</div>
+    <div id="ad-bar-wrap"><div id="ad-bar"></div></div>
+  </div>
+
+  <script>
+    const MAX_FREE = 3;
+    let uses = 0;
+
+    const btn       = document.getElementById('spray-btn');
+    const usesLeft  = document.getElementById('uses-left');
+    const paywall   = document.getElementById('paywall');
+    const payBtn    = document.getElementById('pay-btn');
+    const adBtn     = document.getElementById('ad-btn');
+    const adOverlay = document.getElementById('ad-overlay');
+    const countdown = document.getElementById('countdown');
+    const adBar     = document.getElementById('ad-bar');
+
+    function updateUsesDisplay() {
+      const left = MAX_FREE - uses;
+      usesLeft.textContent = left > 0
+        ? `${left} free spray${left !== 1 ? 's' : ''} remaining`
+        : '';
+    }
+
+    function playHorn() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const shaper = ctx.createWaveShaper();
+
+        // Mild distortion for that buzzy horn texture
+        const curve = new Float32Array(256);
+        for (let i = 0; i < 256; i++) {
+          const x = (i * 2) / 256 - 1;
+          curve[i] = (Math.PI + 150) * x / (Math.PI + 150 * Math.abs(x));
+        }
+        shaper.curve = curve;
+
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(700, ctx.currentTime);
+        osc1.frequency.exponentialRampToValueAtTime(380, ctx.currentTime + 1.3);
+
+        osc2.type = 'square';
+        osc2.frequency.setValueAtTime(704, ctx.currentTime);
+        osc2.frequency.exponentialRampToValueAtTime(383, ctx.currentTime + 1.3);
+
+        gain.gain.setValueAtTime(0.22, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.3);
+
+        osc1.connect(shaper);
+        osc2.connect(shaper);
+        shaper.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc1.start(); osc1.stop(ctx.currentTime + 1.3);
+        osc2.start(); osc2.stop(ctx.currentTime + 1.3);
+      } catch (e) { /* audio not supported — silently skip */ }
+    }
+
+    function sprayConfetti() {
+      playHorn();
+
+      const end = Date.now() + 3000;
+      const colors = ['#f093fb','#f5576c','#4facfe','#00f2fe','#43e97b','#ffecd2','#ffd700'];
+
+      (function frame() {
+        confetti({ particleCount: 8, angle: 60,  spread: 60, origin: { x: 0 }, colors });
+        confetti({ particleCount: 8, angle: 120, spread: 60, origin: { x: 1 }, colors });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      })();
+    }
+
+    function unlock() {
+      uses = 0;
+      updateUsesDisplay();
+      sprayConfetti();
+    }
+
+    // Main button
+    btn.addEventListener('click', () => {
+      if (uses >= MAX_FREE) {
+        paywall.classList.add('active');
+        return;
+      }
+      uses++;
+      updateUsesDisplay();
+      sprayConfetti();
+    });
+
+    // $100 option
+    payBtn.addEventListener('click', () => {
+      paywall.classList.remove('active');
+      setTimeout(() => {
+        alert('💳 Payment of $100 processed!\n\nJust kidding — your card is safe. But seriously, recycle. 🌱');
+        unlock();
+      }, 80);
+    });
+
+    // Watch ad option
+    adBtn.addEventListener('click', () => {
+      paywall.classList.remove('active');
+      showAd();
+    });
+
+    function showAd() {
+      adOverlay.style.display = 'flex';
+
+      // Restart CSS animation on the progress bar
+      adBar.classList.remove('running');
+      void adBar.offsetWidth; // force reflow so animation restarts
+      adBar.classList.add('running');
+
+      let secs = 5;
+      countdown.textContent = secs;
+
+      const timer = setInterval(() => {
+        secs--;
+        countdown.textContent = secs;
+        if (secs <= 0) {
+          clearInterval(timer);
+          adOverlay.style.display = 'none';
+          unlock();
+        }
+      }, 1000);
+    }
+
+    updateUsesDisplay();
+  </script>
+
+</body>
+</html>
