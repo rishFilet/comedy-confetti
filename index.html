@@ -107,8 +107,8 @@
     .btn-ad:hover  { border-color: rgba(255,255,255,0.55); transform: scale(1.02); }
     .btn-ad:active { transform: scale(0.97); }
 
-    /* ── Ad overlay ── */
-    #ad-overlay {
+    /* ── Sponsor overlay ── */
+    #sponsor-screen {
       display: none;
       position: fixed;
       inset: 0;
@@ -120,26 +120,26 @@
       text-align: center;
       padding: 2rem;
     }
-    #ad-overlay.active { display: flex; }
+    #sponsor-screen.active { display: flex; }
 
-    #ad-overlay .ad-eyebrow {
+    #sponsor-screen .eyebrow {
       font-size: 0.85rem;
       letter-spacing: 3px;
       text-transform: uppercase;
       opacity: 0.7;
       margin-bottom: 1.2rem;
     }
-    #ad-overlay .ad-logo {
+    #sponsor-screen .logo {
       font-size: clamp(3rem, 10vw, 5.5rem);
       margin-bottom: 0.2rem;
     }
-    #ad-overlay .ad-brand {
+    #sponsor-screen .brand {
       font-size: clamp(1.8rem, 5vw, 3rem);
       font-weight: 800;
       letter-spacing: -0.5px;
       margin-bottom: 0.8rem;
     }
-    #ad-overlay .ad-tagline {
+    #sponsor-screen .tagline {
       font-size: clamp(1rem, 2.5vw, 1.3rem);
       opacity: 0.88;
       max-width: 380px;
@@ -194,12 +194,12 @@
     </div>
   </div>
 
-  <!-- Ad overlay -->
-  <div id="ad-overlay">
-    <div class="ad-eyebrow">Advertisement</div>
-    <div class="ad-logo">🍗</div>
-    <div class="ad-brand">Tiger Den</div>
-    <div class="ad-tagline">Buy Tiger Den fried chicken — the only other reason to stick around.</div>
+  <!-- Sponsor overlay -->
+  <div id="sponsor-screen">
+    <div class="eyebrow">Advertisement</div>
+    <div class="logo">🍗</div>
+    <div class="brand">Tiger Den</div>
+    <div class="tagline">Buy Tiger Den fried chicken — the only other reason to stick around.</div>
     <div id="ad-timer">Ad ends in <span id="countdown">5</span>s</div>
     <div id="ad-bar-wrap"><div id="ad-bar"></div></div>
   </div>
@@ -213,7 +213,7 @@
     const paywall   = document.getElementById('paywall');
     const payBtn    = document.getElementById('pay-btn');
     const adBtn     = document.getElementById('ad-btn');
-    const adOverlay = document.getElementById('ad-overlay');
+    const adOverlay = document.getElementById('sponsor-screen');
     const countdown = document.getElementById('countdown');
     const adBar     = document.getElementById('ad-bar');
 
@@ -308,7 +308,7 @@
     });
 
     function showAd() {
-      adOverlay.style.display = 'flex';
+      adOverlay.classList.add('active');
 
       // Restart CSS animation on the progress bar
       adBar.classList.remove('running');
@@ -323,7 +323,7 @@
         countdown.textContent = secs;
         if (secs <= 0) {
           clearInterval(timer);
-          adOverlay.style.display = 'none';
+          adOverlay.classList.remove('active');
           unlock();
         }
       }, 1000);
